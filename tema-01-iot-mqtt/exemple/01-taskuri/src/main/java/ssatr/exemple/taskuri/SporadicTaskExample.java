@@ -6,23 +6,23 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * TASK SPORADIC
- *
+ * <p>
  * Un task sporadic este declanșat de evenimente, dar între două eliberări
  * trece cel puțin un interval cunoscut: intervalul minim între sosiri
  * (minimum inter-arrival time). Momentele exacte nu se cunosc, dar densitatea
  * lor maximă, da. Termenul-limită D poate fi hard.
  * Exemplu tipic: o alarmă declanșată când temperatura depășește un prag.
- *
+ * <p>
  * Pentru analiză, un task sporadic se tratează ca un task periodic cu perioada
  * egală cu intervalul minim între sosiri.
- *
+ * <p>
  * Intervalul minim trebuie impus de hardware sau de cod, nu doar sperat.
  * Java nu îl impune, așa că îl verificăm noi:
- *  - un thread "generator" produce evenimente la momente aleatoare
- *    (unele prea apropiate unul de altul);
- *  - un thread "handler" eliberează un job pentru fiecare eveniment și le
- *    RESPINGE pe cele care încalcă intervalul minim între sosiri;
- *  - pentru fiecare job, verificăm dacă timpul de răspuns R <= D.
+ * - un thread "generator" produce evenimente la momente aleatoare
+ * (unele prea apropiate unul de altul);
+ * - un thread "handler" eliberează un job pentru fiecare eveniment și le
+ * RESPINGE pe cele care încalcă intervalul minim între sosiri;
+ * - pentru fiecare job, verificăm dacă timpul de răspuns R <= D.
  */
 public class SporadicTaskExample {
 
@@ -50,7 +50,9 @@ public class SporadicTaskExample {
         System.out.println("Gata.");
     }
 
-    /** Un eveniment: un număr de ordine și momentul sosirii lui. */
+    /**
+     * Un eveniment: un număr de ordine și momentul sosirii lui.
+     */
     static class Event {
         final int id;
         final long time;
@@ -61,7 +63,9 @@ public class SporadicTaskExample {
         }
     }
 
-    /** Taskul sporadic: tratează alarmele, respectând intervalul minim între sosiri. */
+    /**
+     * Taskul sporadic: tratează alarmele, respectând intervalul minim între sosiri.
+     */
     static class AlarmHandler implements Runnable {
         private final BlockingQueue<Event> queue;
         private final Random random = new Random();
