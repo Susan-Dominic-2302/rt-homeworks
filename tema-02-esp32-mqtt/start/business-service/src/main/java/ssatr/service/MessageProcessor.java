@@ -5,11 +5,11 @@ import java.util.concurrent.BlockingQueue;
 /**
  * Preia mesajele de un anumit tip ("telemetry", "alarm" sau "status") din coada
  * inbox, le salvează și actualizează dashboard-ul.
- *
+ * <p>
  * Formatul mesajelor (câmpuri separate prin ";"):
- *   telemetry:  deviceId;timestamp;temperatura
- *   alarm:      deviceId;timestamp;temperatura;prag
- *   status:     deviceId;timestamp;text
+ * telemetry:  deviceId;timestamp;temperatura
+ * alarm:      deviceId;timestamp;temperatura;prag
+ * status:     deviceId;timestamp;text
  */
 public class MessageProcessor implements Runnable {
 
@@ -28,11 +28,24 @@ public class MessageProcessor implements Runnable {
     @Override
     public void run() {
         // TODO 4: într-o buclă:
-        //   - preluați un mesaj: inbox.take()
-        //   - salvați mesajul în fișierul CSV: storage.append(kind, mesaj)
-        //     (CsvStorage este gata implementată)
-        //   - actualizați dashboard-ul, în funcție de kind
-        //   - alarmele și confirmările se afișează imediat în consolă
-        //   - un mesaj greșit (format invalid) nu trebuie să oprească thread-ul
+        try {
+            for (; ; ) {
+
+                //   - preluați un mesaj: inbox.take()
+                String mesaj = inbox.take();
+
+                //   - salvați mesajul în fișierul CSV: storage.append(kind, mesaj)
+                //     (CsvStorage este gata implementată)
+                storage.append(kind, mesaj);
+                //   - actualizați dashboard-ul, în funcție de kind
+                dashboard.actualizare(kind,mesaj);
+                //   - alarmele și confirmările se afișează imediat în consolă
+                //   - un mesaj greșit (format invalid) nu trebuie să oprească thread-ul
+                if(kind.equals("status"))
+                    System.out.println("mesajul meu: "+mesaj);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

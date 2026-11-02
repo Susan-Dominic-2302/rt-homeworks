@@ -2,14 +2,15 @@ package ssatr.service;
 
 import java.util.Scanner;
 
+
 /**
  * Consola operatorului: citește comenzi de la tastatură.
- *
- *   show                               afișează dashboard-ul
- *   <deviceId> <COMANDA> [parametru]   trimite o comandă unui device, de exemplu
- *                                      device-1 SET_INTERVAL 1000
- *   help                               afișează comenzile
- *   exit                               oprește serviciul
+ * <p>
+ * show                               afișează dashboard-ul
+ * <deviceId> <COMANDA> [parametru]   trimite o comandă unui device, de exemplu
+ * device-1 SET_INTERVAL 1000
+ * help                               afișează comenzile
+ * exit                               oprește serviciul
  */
 public class CommandConsole implements Runnable {
 
@@ -36,7 +37,11 @@ public class CommandConsole implements Runnable {
             } else if (line.equals("help")) {
                 printHelp();
             } else if (line.equals("show")) {
-                dashboard.print();
+                try {
+                    dashboard.print();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 sendCommand(line);
             }
@@ -46,9 +51,26 @@ public class CommandConsole implements Runnable {
     private void sendCommand(String line) {
         // TODO 6: separați deviceId de restul liniei
         //   ("device-1 SET_INTERVAL 1000" -> "device-1" și "SET_INTERVAL 1000")
+        String[] commandLine = line.split(" ");
         //   și publicați comanda pe Config.commandTopic(deviceId).
+        String deviceId = commandLine[0];
+        String topic = Config.commandTopic(deviceId);
+        if(commandLine.length>1) {
+            String command = commandLine[1];
+            switch (command) {
+                case "SET_INTERVAL":
+                case "SET_THRESHOLD":
+                    if(commandLine.length<3) break;
+                    String value = commandLine[2];
+                    command += " " + value;
+                case "RESET":
+                case "STATUS":
+                    mqtt.publish(topic, command);
+                    return;
+            }
+        }
         //   Afișați un mesaj de eroare dacă linia nu are formatul corect.
-        System.out.println("(trimiterea comenzilor neimplementată): " + line);
+        System.out.println("FORMAT incorect: " + line);
     }
 
     private void printHelp() {

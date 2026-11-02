@@ -83,19 +83,19 @@ public class PeriodicTelemetryTask implements Runnable {
         }
     }
 
-    public void setPeriodMs(long periodMs) {
+    public synchronized void setPeriodMs(long periodMs) {
         this.periodMs = periodMs;
     }
 
-    public void setThreshold(double threshold) {
+    public synchronized void setThreshold(double threshold) {
         this.threshold = threshold;
     }
 
-    public long getPeriodMs() {
+    public synchronized long getPeriodMs() {
         return periodMs;
     }
 
-    public double getThreshold() {
+    public synchronized double getThreshold() {
         return threshold;
     }
 }
