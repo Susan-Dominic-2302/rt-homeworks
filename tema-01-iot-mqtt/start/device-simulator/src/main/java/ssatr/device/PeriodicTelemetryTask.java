@@ -3,6 +3,7 @@ package ssatr.device;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * TASK PERIODIC, cu perioada T = periodMs: fiecare job citește senzorul și
@@ -22,8 +23,9 @@ public class PeriodicTelemetryTask implements Runnable {
 
 
     // volatile: sunt citite aici, dar modificate de taskul aperiodic (alt thread)
-    private volatile long periodMs = 2000;
+    private volatile AtomicLong periodMs = new AtomicLong(2000);
     private volatile double threshold = 28.0;
+    private final Object thresholdMutex = new Object();
 
     public PeriodicTelemetryTask(String deviceId, TemperatureSensor sensor, MqttConnection mqtt,
                                  BlockingQueue<TemperatureEvent> alarmEvents) {
@@ -54,9 +56,9 @@ public class PeriodicTelemetryTask implements Runnable {
             mqtt.publish(topic, mesaj);
 
             //   - dacă temperatura > threshold, puneți valoarea în coada alarmEvents
-            double threshold=getThreshold();
+            double threshold = getThreshold();
             if (t > threshold)
-                alarmEvents.add(new TemperatureEvent(t,System.currentTimeMillis(),threshold));
+                alarmEvents.add(new TemperatureEvent(t, System.currentTimeMillis(), threshold));
 
             //
             // Folosiți așteptare absolută, nu relativă: Thread.sleep(periodMs) după
@@ -84,18 +86,22 @@ public class PeriodicTelemetryTask implements Runnable {
     }
 
     public synchronized void setPeriodMs(long periodMs) {
-        this.periodMs = periodMs;
+        this.periodMs.set(periodMs);
     }
 
     public synchronized void setThreshold(double threshold) {
-        this.threshold = threshold;
+        synchronized (thresholdMutex) {
+            this.threshold = threshold;
+        }
     }
 
     public synchronized long getPeriodMs() {
-        return periodMs;
+        return periodMs.get();
     }
 
     public synchronized double getThreshold() {
-        return threshold;
+        synchronized (thresholdMutex) {
+            return threshold;
+        }
     }
 }

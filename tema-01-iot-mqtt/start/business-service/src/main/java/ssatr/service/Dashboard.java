@@ -81,6 +81,7 @@ public class Dashboard {
             case "alarm":
                 temperatura = Double.parseDouble(date[2]);
                 dashboardData.temp = temperatura;
+                dashboardData.alarme+=1;
 
         }
         devicesData.put(deviceId, dashboardData);

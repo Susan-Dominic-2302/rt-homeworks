@@ -41,6 +41,9 @@ public class MessageProcessor implements Runnable {
                 dashboard.actualizare(kind,mesaj);
                 //   - alarmele și confirmările se afișează imediat în consolă
                 //   - un mesaj greșit (format invalid) nu trebuie să oprească thread-ul
+                if(kind.equals("STATUS")){
+                    System.out.print("\nStatus: "+mesaj+"\n");
+                }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
