@@ -1,4 +1,4 @@
-package ssatr.semafor;
+ package ssatr.semafor;
 
 import java.awt.Desktop;
 import java.io.IOException;
