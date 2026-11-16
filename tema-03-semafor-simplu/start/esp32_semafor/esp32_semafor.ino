@@ -76,7 +76,7 @@ QueueHandle_t buttonQueue;
 // Done TODO 1: TASK PERIODIC DE CONTROL, cu perioada CONTROL_PERIOD_MS.
 void run_Task_Periodic_de_Control(void *arg)
 {
-    uint32_t start = millis();
+    TickType_t start = xTaskGetTickCount();
     bool fazaCurentaSaSchimbat = false;
     for (;;)
     {
@@ -134,7 +134,7 @@ void run_Task_Periodic_de_Control(void *arg)
             fazaCurentaSaSchimbat = false;
             Serial.printf("[control] faza curentă: %s\n", PHASE_NAMES[semaforul.areFazaCurenta]);
         }
-        xTaskDelayUntil(&start, CONTROL_PERIOD_MS);
+        xTaskDelayUntil(&start, pdMS_TO_TICKS(OUTPUT_PERIOD_MS));
     }
 
     //   La fiecare schimbare de fază notați momentul intrării în faza nouă.
@@ -147,7 +147,7 @@ void run_Task_Periodic_de_Control(void *arg)
 // TODO 2: TASK PERIODIC DE IEȘIRE, cu perioada OUTPUT_PERIOD_MS.
 void run_Task_Periodic_de_Iesire(void *arg)
 {
-    uint32_t start = millis();
+    TickType_t start = xTaskGetTickCount();
     for (;;)
     {
         // TODO 2: luați mutexul, citiți starea, calculați culorile lămpilor și
@@ -184,10 +184,9 @@ void run_Task_Periodic_de_Iesire(void *arg)
         //     AȘTEPTAȚI este aprinsă
         semaforulLocal.areOCerereDeLaPieton ? digitalWrite(LED_PIN, LOW) : digitalWrite(LED_PIN, HIGH);
         mqtt_publish("lights", mesaj);
-        Serial.printf("[debug] trimis lights: %s\n", mesaj);
 
         //   Așteptare absolută (xTaskDelayUntil), ca și la taskul de control.
-        xTaskDelayUntil(&start, OUTPUT_PERIOD_MS);
+        xTaskDelayUntil(&start, pdMS_TO_TICKS(OUTPUT_PERIOD_MS));
     }
 }
 
@@ -224,7 +223,6 @@ void run_Task_Sporadic(void *arg)
             Serial.printf("[sporadic] apăsare acceptată la %lu ms\n", comanda.timestamp);
             ultimaApasare = comanda.timestamp;
         }
-        
     }
 }
 
@@ -239,10 +237,10 @@ void run_Task_Sporadic(void *arg)
 //   void IRAM_ATTR button_isr(void) { ... }
 void IRAM_ATTR button_isr(void)
 {
-    BaseType_t woken = pdFALSE;
     Comenzi comanda;
-    comanda.timestamp = millis();
+    comanda.timestamp = xTaskGetTickCountFromISR() * portTICK_PERIOD_MS;
     strncpy(comanda.command, "BUTTON", COMMAND_MAX_LEN - 1);
+    BaseType_t woken = pdFALSE;
     xQueueSendFromISR(buttonQueue, &comanda, &woken);
     portYIELD_FROM_ISR(woken);
 }
@@ -257,7 +255,7 @@ void command_received(const char *text)
     if (strcmp(text, "BUTTON") == 0)
     {
         Comenzi comanda;
-        comanda.timestamp = millis();
+        comanda.timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS;
         strncpy(comanda.command, "BUTTON", COMMAND_MAX_LEN - 1);
         xQueueSend(buttonQueue, &comanda, 0);
     }
@@ -292,7 +290,6 @@ void setup()
     buttonQueue = xQueueCreate(10, sizeof(Comenzi));
 
     mqtt_start();
-
     // Done TODO 0 (b): porniți cele trei taskuri (xTaskCreate), apoi înregistrați
     //   întreruperea butonului (attachInterrupt). Alegeți prioritățile între
     //   2 și 19 (peste loopTask, sub taskurile sistemului); pentru cele două
